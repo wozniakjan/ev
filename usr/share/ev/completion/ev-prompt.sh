@@ -1,21 +1,30 @@
 __ev_prompt_command ()
 {
-    #TODO remember last version
-    local active=`ev set 2> /dev/null`
-    if [ "$active" != "" ]; then
-        if [ "$active" != "$EV_ACTIVE" ]; then
-            local repo=`ev global repo 2> /dev/null`
+    local active="`ev set 2> /dev/null`"
+    if [ "$active" == default ]; then
+        local active=""
+    fi
+    if [ "$active" != "$EV_ACTIVE" ]; then
+        if [ "$active" != "" ]; then
+            local repo="`ev global repo 2> /dev/null`"
             local erlang_path="$repo/envs/$active/bin/"
-            export EV_ACTIVE="$active"
+        fi
+        __ev_update_path "$erlang_path"
+    fi
+    export EV_ACTIVE="$active"
+}
+
+__ev_update_path()
+{
+    local erlang_path="$1"
+    if [ "$erlang_path" != "" ]; then
+        if [ "$EV_PATH_BACKUP" == "" ]; then
             export EV_PATH_BACKUP="$PATH"
-            export PATH="$erlang_path":"$PATH"
         fi
+        export PATH="${erlang_path}:${EV_PATH_BACKUP}"
     else
-        if [ "$EV_PATH_BACKUP" != "" ]; then
-            export PATH="$EV_PATH_BACKUP"
-            unset EV_PATH_BACKUP
-            unset EV_ACTIVE
-        fi
+        export PATH="$EV_PATH_BACKUP"
+        unset EV_PATH_BACKUP
     fi
 }
 
