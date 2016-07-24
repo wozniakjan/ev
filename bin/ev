@@ -1,0 +1,116 @@
+#!/usr/bin/env escript
+
+-define(ROOT, "/home/wozy/projects/ev/").
+-define(LOCAL_CONFIG, ".ev.conf").
+-define(GLOBAL_CONFIG, ?ROOT ++ "etc/ev.conf").
+
+main([]) ->
+    println("Erlang Versions - manage concurrent versions of Erlang/OTP"),
+    println("usage: ev <command> [<args>]"),
+    println(),
+    println("global control - 'ev global <arg>'"),
+    println("    repo       Configure path to Erlang/OTP repository"),
+    println("    available  List tags available to be built"),
+    println("    build      Build a tag and add to the repository"),
+    %println("    remote     Configure URL to Erlang/OTP page"),
+    %println(),
+    %println("remote control - 'ev remote <arg>'"),
+    %println("    list       Print remotely available versions from"),
+    %println("    update     Update the list of remotely available versions"),
+    %println("    fetch      Download specified version from remote to repo"),
+    println(),
+    println("local control - 'ev <command>"),
+    println("    status     Print status report"),
+    println("    init       Mark current directory to be managed by ev"),
+    println("    list       Print local available versions"),
+    println("    set        Activate specific Erlang/OTP version");
+main(Args) ->
+    try ev(Args) of
+        _ -> ok
+    catch
+        E:Msg -> io:format(standard_error,"~p: ~s~n", [E, Msg])
+    end.
+
+ev(["global" | ["repo"]]) -> println(repo());
+ev(["global" | ["repo" | [Path]]]) -> repo(Path);
+ev(["status"]) -> status();
+ev(["init"]) -> init();
+ev(["list"]) -> lists:map(fun(X) -> io:format("~s~n", [X]) end, list());
+ev(["set"]) -> set();
+ev(["set" | ["default"]]) -> set(default);
+ev(["set" | [NewCurrent]]) -> set(NewCurrent);
+ev(Cmd) -> error("Unknown command", [Cmd]).
+
+
+println() -> io:format("~n", []).
+println(Str) -> io:format(Str, []), println().
+
+repo() ->
+    Global = cfg(?GLOBAL_CONFIG),
+    maps:get(repo, Global, "/tmp").
+
+repo(NewRepo) ->
+    update_cfg(repo, NewRepo, ?GLOBAL_CONFIG).
+
+status() ->
+    Global = cfg(?GLOBAL_CONFIG),
+    Local = cfg(?LOCAL_CONFIG),
+    println("Status"),
+    io:format("Global ~p~nLocal ~p~n",[Global, Local]).
+
+list() ->
+    Repo = repo() ++ "/envs",
+    {ok, Dirs} = file:list_dir(Repo),
+    [default | Dirs].
+
+set() ->
+    case cfg(?LOCAL_CONFIG) of
+        no_config -> error("ev is not active here");
+        Cfg -> io:format("~s~n",[maps:get(current, Cfg)])
+    end.
+
+set(NewCurrent) ->
+    Contains = fun(X)-> X == NewCurrent end,
+    Available = list(),
+    case lists:any(Contains, Available) of
+        true -> 
+            update_cfg(current, NewCurrent, ?LOCAL_CONFIG);
+        false ->
+            io:format("No version ~p found, available ~p~n", [NewCurrent, Available])
+    end.
+
+init() -> 
+    {ok, Cwd} = file:get_cwd(),
+    case cfg(?LOCAL_CONFIG) of
+        no_config -> io:format("Initializing local ev in ~s/.ev.conf~n", [Cwd]);
+        _Cfg -> io:format("Re-initializing local ev in ~s/.ev.conf~n", [Cwd])
+    end,
+    init_local_cfg().
+
+init_local_cfg() -> 
+    Global = cfg(?GLOBAL_CONFIG),
+    Local = maps:get(init_cfg, Global),
+    save(?LOCAL_CONFIG, Local).
+
+update_cfg(Key, Value, CfgPath) ->
+    Cfg = cfg(CfgPath),
+    NewCfg = maps:put(Key, Value, Cfg),
+    save(CfgPath, NewCfg).
+
+cfg(CfgPath) ->
+    case file:consult(CfgPath) of
+       {ok, [Cfg]} -> Cfg;
+       {error, enoent} -> no_config
+    end.
+
+save(CfgPath, Cfg) ->
+    All = maps:to_list(Cfg),
+    List = lists:droplast(All),
+    Map = fun({K, V}) ->
+              io_lib:format("  ~tp => ~tp,~n",[K, V])
+          end,
+    Body = lists:map(Map, List),
+    {LastK, LastV} = lists:last(All),
+    Binary = Body ++ [ io_lib:format("  ~tp => ~tp~n}.", [LastK, LastV]) ],
+    Formatted = [ <<"#{\n">> | Binary ],
+    ok = file:write_file(CfgPath, Formatted).
