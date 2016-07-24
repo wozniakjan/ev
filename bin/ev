@@ -35,7 +35,7 @@ ev(["global" | ["repo"]]) -> println(repo());
 ev(["global" | ["repo" | [Path]]]) -> repo(Path);
 ev(["status"]) -> status();
 ev(["init"]) -> init();
-ev(["list"]) -> lists:map(fun(X) -> io:format("~s~n", [X]) end, list());
+ev(["list"]) -> list();
 ev(["set"]) -> set();
 ev(["set" | ["default"]]) -> set(default);
 ev(["set" | [NewCurrent]]) -> set(NewCurrent);
@@ -59,19 +59,33 @@ status() ->
     io:format("Global ~p~nLocal ~p~n",[Global, Local]).
 
 list() ->
+    List = local_list(),
+    Active = active(),
+    Print = fun(X)->
+                case X of
+                    Active -> io:format("* ~s~n", [X]);
+                    _ -> io:format("  ~s~n", [X])
+                end
+            end,
+    lists:map(Print, List).
+
+local_list() ->
     Repo = repo() ++ "/envs",
     {ok, Dirs} = file:list_dir(Repo),
     [default | Dirs].
 
-set() ->
+active() ->
     case cfg(?LOCAL_CONFIG) of
         no_config -> error("ev is not active here");
-        Cfg -> io:format("~s~n",[maps:get(current, Cfg)])
+        Cfg -> maps:get(current, Cfg)
     end.
+
+set() ->
+    io:format("~s~n", [active()]).
 
 set(NewCurrent) ->
     Contains = fun(X)-> X == NewCurrent end,
-    Available = list(),
+    Available = local_list(),
     case lists:any(Contains, Available) of
         true -> 
             update_cfg(current, NewCurrent, ?LOCAL_CONFIG);
