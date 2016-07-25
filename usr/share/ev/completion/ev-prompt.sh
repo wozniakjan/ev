@@ -1,3 +1,46 @@
+_ev_compreply ()
+{
+    local terminal=("$1")
+    local nontermianl=("$1")
+    local all=("$1" "$2")
+    
+    COMPREPLY=( `compgen -W "${all[*]}" -- $cur` )
+    local i=0
+    for (( i=0; i<${#COMPREPLY[@]}; i++ )); do
+        local k="$COMPREPLY[i]"
+        local contains=""
+        for c in ${nonterminal[*]}; do
+            if [ "$k" == "$c" ]; then
+                contains=true
+            fi
+        done
+        if [ "$c" == true ]; then
+            COMPREPLY[i]="$k "
+        fi
+    done
+}
+
+_ev ()
+{
+    local cur command
+    cur=${COMP_WORDS[COMP_CWORD]}
+    command=${COMP_WORDS[COMP_CWORD-1]}
+    
+    if [ "$command" == "ev" ]; then
+        _ev_compreply 'init status' 'set'
+        return 0
+    fi
+    
+    case "$command" in
+    init) COMPREPLY=() ;;
+    set) _ev_compreply 'default 1.8 1.9' ''
+    status) COMPREPLY=() ;;
+    *) COMPREPLY=() ;;
+    esac
+    
+    return 0
+}
+
 __ev_prompt_command ()
 {
     local active="`ev set 2> /dev/null`"
