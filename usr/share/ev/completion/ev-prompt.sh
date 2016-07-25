@@ -1,20 +1,20 @@
 _ev_compreply ()
 {
     local terminal=("$1")
-    local nontermianl=("$1")
+    local nonterminal=("$1")
     local all=("$1" "$2")
     
     COMPREPLY=( `compgen -W "${all[*]}" -- $cur` )
     local i=0
     for (( i=0; i<${#COMPREPLY[@]}; i++ )); do
-        local k="$COMPREPLY[i]"
+        local k=${COMPREPLY[i]}
         local contains=""
-        for c in ${nonterminal[*]}; do
+        for c in ${nonterminal[@]}; do
             if [ "$k" == "$c" ]; then
                 contains=true
             fi
         done
-        if [ "$c" == true ]; then
+        if [ "$contains" != true ]; then
             COMPREPLY[i]="$k "
         fi
     done
@@ -32,10 +32,10 @@ _ev ()
     fi
     
     case "$command" in
-    init) COMPREPLY=() ;;
-    set) _ev_compreply 'default 1.8 1.9' ''
+    init)   COMPREPLY=() ;;
+    set)    _ev_compreply 'default 1.8 1.9' '' ;;
     status) COMPREPLY=() ;;
-    *) COMPREPLY=() ;;
+    *)      COMPREPLY=() ;;
     esac
     
     return 0
@@ -78,3 +78,7 @@ __ev_ps1 ()
         echo " (ev $active)"
     fi
 }
+
+
+complete -o bashdefault -o default -o nospace -F _ev ev 2>/dev/null \
+		|| complete -o default -o nospace -F _ev ev
