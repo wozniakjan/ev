@@ -33,7 +33,7 @@ _ev ()
     
     case "$command" in
     init)   COMPREPLY=() ;;
-    set)    _ev_compreply 'default 1.8 1.9' '' ;;
+    set)    _ev_compreply "`ev list`" '' ;;
     status) COMPREPLY=() ;;
     *)      COMPREPLY=() ;;
     esac
