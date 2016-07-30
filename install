@@ -72,7 +72,7 @@ __ev_add_path ()
     fi
     
     case $k in
-        Y) echo 'export PATH="'$install_path'/bin:$PATH"' >> $HOME/.bashrc1 ;;
+        Y) echo 'export PATH="'$install_path'/bin:$PATH"' >> $HOME/.bashrc ;;
         n) ;;
         *) __ev_add_path
     esac
@@ -87,7 +87,7 @@ __ev_add_ps1 ()
     fi
     
     case $k in
-        Y) echo 'export PS1="$PS1 '"'"'$(__ev_ps1)'"'"' "' >> $HOME/.bashrc1 ;;
+        Y) echo 'export PS1="$PS1 '"'"'$(__ev_ps1)'"'"' "' >> $HOME/.bashrc ;;
         n) ;;
         *) __ev_add_ps1
     esac
@@ -102,7 +102,7 @@ __ev_add_prompt_command ()
     fi
 
     case $k in
-    Y) echo 'export PROMPT_COMMAND="__ev_prompt_command; $PROMPT_COMMAND"' >> $HOME/.bashrc1 ;;
+    Y) echo 'export PROMPT_COMMAND="__ev_prompt_command; $PROMPT_COMMAND"' >> $HOME/.bashrc ;;
     n) ;;
     *) __ev_add_prompt_command
     esac
@@ -117,12 +117,12 @@ __ev_add_bashrc ()
     fi
 
     case $k in
-    Y) echo '### ev ###' >> $HOME/.bashrc1
-       echo 'source '$install_path'/usr/share/ev/completion/ev-prompt.sh' >> $HOME/.bashrc1
+    Y) echo '### ev ###' >> $HOME/.bashrc
+       echo 'source '$install_path'/usr/share/ev/completion/ev-prompt.sh' >> $HOME/.bashrc
        __ev_add_path
        __ev_add_ps1
        __ev_add_prompt_command 
-       echo '### ev ###' >> $HOME/.bashrc1 ;;
+       echo '### ev ###' >> $HOME/.bashrc ;;
     n) ;;
     *) __ev_add_prompt_command
     esac
