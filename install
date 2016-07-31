@@ -2,23 +2,23 @@
 
 __ev_verify_requirements ()
 {
-    which erl &> /dev/null
+    which erl 2>&1 > /dev/null
     local ret="$?"
     if [ "$ret" != 0 ]; then
         echo "Couldn't find Erlang"
         exit 1
     fi
-    local version=`erl -eval 'io:format("~s",[erlang:system_info(otp_release)]), halt().'  -noshell` &> /dev/null
+    local version=`erl -eval 'io:format("~s",[erlang:system_info(otp_release)]), halt().'  -noshell`
     ret="$?"
     if [ "$ret" != 0 ]; then
         echo "Couldn't determine Erlang version"
         exit 1
     fi
-    if [ $version -lt 18 ]; then
+    if [ "$version" -lt 18 ]; then
         echo "Erlang version $version doesn't match required 18"
         exit 1
     fi
-    which git &> /dev/null
+    which git 2>&1 > /dev/null
     local ret="$?"
     if [ "$ret" != 0 ]; then
         echo "Couldn't find git"
