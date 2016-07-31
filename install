@@ -16,7 +16,7 @@ __ev_verify_requirements ()
         echo "Couldn't determine Erlang version"
         exit 1
     fi
-    if [ "$version" -lt 19 ]; then
+    if [ "$version" -lt 14 ]; then
         echo "Erlang version $version doesn't match required 14"
         exit 1
     fi
