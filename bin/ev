@@ -1,5 +1,7 @@
 #!/usr/bin/env escript
 
+#TODO: rewrite as bash script, erlang's startup can be pretty slow
+
 -define(ROOT, "/home/wozy/projects/ev/").
 -define(LOCAL_CONFIG, ".ev.conf").
 -define(GLOBAL_CONFIG, ?ROOT ++ "etc/ev.conf").
