@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+set -e
 
 __ev_verify_requirements ()
 {
@@ -14,8 +16,8 @@ __ev_verify_requirements ()
         echo "Couldn't determine Erlang version"
         exit 1
     fi
-    if [ "$version" -lt 18 ]; then
-        echo "Erlang version $version doesn't match required 18"
+    if [ "$version" -lt 19 ]; then
+        echo "Erlang version $version doesn't match required 14"
         exit 1
     fi
     which git 2>&1 > /dev/null
@@ -41,21 +43,6 @@ __ev_install ()
     cp -r etc $install_path
     cp -r usr $install_path
     cp -r bin $install_path
-}
-
-__ev_get_repo ()
-{
-    local repo_path
-    printf "Absolute path for OTP git repository? [$install_path]: "
-    read repo_path
-    if [ "$repo_path" == "" ]; then
-        repo_path="$install_path"
-    fi
-    
-    if [ ! -d "$repo_path" ]; then
-        mkdir -p "$repo_path"
-    fi
-
     (
         cd $repo_path
         git clone https://github.com/erlang/otp.git
@@ -132,7 +119,6 @@ echo "Installing 'ev' - Erlang Versions"
 echo "============================================="
 __ev_verify_requirements
 __ev_install
-__ev_get_repo
 __ev_add_bashrc
 
 unset install_path
