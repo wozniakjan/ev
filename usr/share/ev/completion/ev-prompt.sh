@@ -20,22 +20,38 @@ _ev_compreply ()
     done
 }
 
+_ev_global ()
+{
+    if [ "$COMP_CWORD" -eq 2 ]; then
+        _ev_compreply '' 'repo build'
+        return 0
+    fi
+
+    local cmd=${COMP_WORDS[COMP_CWORD-1]}
+    case "$cmd" in
+        repo)  _ev_compreply "`ev global repo`" '' ;;
+        build) _ev_compreply "todo" "" ;;
+    esac
+}
+
 _ev ()
 {
     local cur command
-    cur=${COMP_WORDS[COMP_CWORD]}
-    command=${COMP_WORDS[COMP_CWORD-1]}
+    local cur=${COMP_WORDS[COMP_CWORD]}
     
-    if [ "$command" == "ev" ]; then
-        _ev_compreply 'init status' 'set'
+    if [ "$COMP_CWORD" -eq 1 ]; then
+        _ev_compreply 'init status list' 'set global'
         return 0
     fi
-    
-    case "$command" in
-    init)   COMPREPLY=() ;;
-    set)    _ev_compreply "`ev list`" '' ;;
-    status) COMPREPLY=() ;;
-    *)      COMPREPLY=() ;;
+   
+    COMPREPLY=()
+    local cmd=${COMP_WORDS[1]}
+    case "$cmd" in
+        init)   ;;
+        set)    _ev_compreply "`ev list`" '' ;;
+        status) ;;
+        list)   ;; 
+        global) _ev_global ;;
     esac
     
     return 0
@@ -50,7 +66,7 @@ __ev_prompt_command ()
     if [ "$active" != "$EV_ACTIVE" ]; then
         if [ "$active" != "" ]; then
             local repo="`ev global repo 2> /dev/null`"
-            local erlang_path="$repo/envs/$active/bin/"
+            local erlang_path="$repo/evs/$active/bin/"
         fi
         __ev_update_path "$erlang_path"
     fi

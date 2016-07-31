@@ -1,134 +1,110 @@
-#!/usr/bin/env escript
+#!/bin/bash
 
-#TODO: rewrite as bash script, erlang's startup can be pretty slow
+root="`dirname $0`/.."
 
--define(ROOT, "/home/wozy/projects/ev/").
--define(LOCAL_CONFIG, ".ev.conf").
--define(GLOBAL_CONFIG, ?ROOT ++ "etc/ev.conf").
+function __ev_status ()
+{
+    echo "status"
+}
 
-main([]) ->
-    println("Erlang Versions - manage concurrent versions of Erlang/OTP"),
-    println("usage: ev <command> [<args>]"),
-    println(),
-    println("global control - 'ev global <arg>'"),
-    println("    repo       Configure path to Erlang/OTP repository"),
-    println("    available  List tags available to be built"),
-    println("    build      Build a tag and add to the repository"),
-    %println("    remote     Configure URL to Erlang/OTP page"),
-    %println(),
-    %println("remote control - 'ev remote <arg>'"),
-    %println("    list       Print remotely available versions from"),
-    %println("    update     Update the list of remotely available versions"),
-    %println("    fetch      Download specified version from remote to repo"),
-    println(),
-    println("local control - 'ev <command>"),
-    println("    status     Print status report"),
-    println("    init       Mark current directory to be managed by ev"),
-    println("    list       Print local available versions"),
-    println("    set        Activate specific Erlang/OTP version");
-main(Args) ->
-    try ev(Args) of
-        _ -> ok
-    catch
-        E:Msg -> io:format(standard_error,"~p: ~s~n", [E, Msg])
-    end.
+function __ev_repo_file ()
+{
+    echo $root/etc/.ev/global/repo
+}
 
-ev(["global" | ["repo"]]) -> println(repo());
-ev(["global" | ["repo" | [Path]]]) -> repo(Path);
-ev(["status"]) -> status();
-ev(["init"]) -> init();
-ev(["list"]) -> list();
-ev(["set"]) -> set();
-ev(["set" | ["default"]]) -> set(default);
-ev(["set" | [NewCurrent]]) -> set(NewCurrent);
-ev(Cmd) -> error("Unknown command", [Cmd]).
+function __ev_init ()
+{
+    if [ -d .ev ]; then
+        echo "Re-initializing local ev in $PWD/.ev"
+        rm -rf ".ev"
+    else
+        echo "Initializing local ev in $PWD/.ev"
+    fi
 
+    cp -r $root/etc/.ev/local .ev
+}
 
-println() -> io:format("~n", []).
-println(Str) -> io:format(Str, []), println().
+function __ev_list ()
+{
+    local repo=`__ev_global_repo`/evs
+    echo "default"
+    for f in ${repo}/*; do
+        if [ -d "$f" ]; then
+            echo `basename "$f"`
+        fi
+    done
+}
 
-repo() ->
-    Global = cfg(?GLOBAL_CONFIG),
-    maps:get(repo, Global, "/tmp").
+function __ev_set ()
+{
+    local new="$1"
+    if [ -z "$new" ]; then
+        cat .ev/active
+    else
+        local list=`__ev_list`
+        local arr_list=( "$list" )
+        for l in $arr_list; do
+            if [ "$l" == "$new" ]; then
+                echo "$new" > .ev/active
+                return 0
+            fi
+        done
+        echo "error: ev '$new' not found, try one of"
+        __ev_list
+    fi
+}
 
-repo(NewRepo) ->
-    update_cfg(repo, NewRepo, ?GLOBAL_CONFIG).
+function __ev_global_repo ()
+{
+    local new="$1"
+    if [ -z "$new" ]; then
+        cat `__ev_repo_file`
+    else
+        echo "$new" > `__ev_repo_file`
+    fi
+}
 
-status() ->
-    Global = cfg(?GLOBAL_CONFIG),
-    Local = cfg(?LOCAL_CONFIG),
-    println("Local versions"),
-    List = local_list(),
-    Active = active(),
-    Print = fun(X)->
-                case X of
-                    Active -> io:format("* ~s~n", [X]);
-                    _ -> io:format("  ~s~n", [X])
-                end
-            end,
-    lists:map(Print, List),
-    io:format("~nGlobal ~p~nLocal ~p~n",[Global, Local]).
+function __ev_global_build ()
+{
+    echo "TODO"
+}
 
-list() ->
-    List = local_list(),
-    lists:map(fun(X)-> io:format("~s~n", [X]) end, List).
+function __ev_global ()
+{
+    local cmd="$1"
+    case $cmd in
+         repo)  __ev_global_repo "$2" ;;
+         build) __ev_global_build "$2" ;;
+         *)     __ev_usage "global $cmd" ;;   
+    esac
+}
 
-local_list() ->
-    Repo = repo() ++ "/envs",
-    {ok, Dirs} = file:list_dir(Repo),
-    [default | Dirs].
+function __ev_usage ()
+{
+    if [ "$1" != "" ]; then
+        echo "unknown command '$1'"
+        echo ""
+    fi
+    echo "Erlang Versions - manage concurrent versions of Erlang/OTP"
+    echo "usage: ev <command> [<args>]"
+    echo 
+    echo "local control - 'ev <command>'"
+    echo "    status     Print status report"
+    echo "    init       Mark current directory to be managed by ev"
+    echo "    list       Print local available versions"
+    echo "    set        Activate specific Erlang/OTP version"
+    echo 
+    echo "global control - 'ev global <arg>'"
+    echo "    repo       Configure path to Erlang/OTP repository"
+    echo "    build      Build a tag and add to the repository"
+}
 
-active() ->
-    case cfg(?LOCAL_CONFIG) of
-        no_config -> error("ev is not active here");
-        Cfg -> maps:get(current, Cfg)
-    end.
-
-set() ->
-    io:format("~s~n", [active()]).
-
-set(NewCurrent) ->
-    Contains = fun(X)-> X == NewCurrent end,
-    Available = local_list(),
-    case lists:any(Contains, Available) of
-        true -> 
-            update_cfg(current, NewCurrent, ?LOCAL_CONFIG);
-        false ->
-            io:format("No version ~p found, available ~p~n", [NewCurrent, Available])
-    end.
-
-init() -> 
-    {ok, Cwd} = file:get_cwd(),
-    case cfg(?LOCAL_CONFIG) of
-        no_config -> io:format("Initializing local ev in ~s/.ev.conf~n", [Cwd]);
-        _Cfg -> io:format("Re-initializing local ev in ~s/.ev.conf~n", [Cwd])
-    end,
-    init_local_cfg().
-
-init_local_cfg() -> 
-    Global = cfg(?GLOBAL_CONFIG),
-    Local = maps:get(init_cfg, Global),
-    save(?LOCAL_CONFIG, Local).
-
-update_cfg(Key, Value, CfgPath) ->
-    Cfg = cfg(CfgPath),
-    NewCfg = maps:put(Key, Value, Cfg),
-    save(CfgPath, NewCfg).
-
-cfg(CfgPath) ->
-    case file:consult(CfgPath) of
-       {ok, [Cfg]} -> Cfg;
-       {error, enoent} -> no_config
-    end.
-
-save(CfgPath, Cfg) ->
-    All = maps:to_list(Cfg),
-    List = lists:droplast(All),
-    Map = fun({K, V}) ->
-              io_lib:format("  ~tp => ~tp,~n",[K, V])
-          end,
-    Body = lists:map(Map, List),
-    {LastK, LastV} = lists:last(All),
-    Binary = Body ++ [ io_lib:format("  ~tp => ~tp~n}.", [LastK, LastV]) ],
-    Formatted = [ <<"#{\n">> | Binary ],
-    ok = file:write_file(CfgPath, Formatted).
+command="$1"
+case $command in 
+    status) __ev_status ;;
+    init)   __ev_init ;;
+    list)   __ev_list ;;
+    set)    __ev_set "$2" ;;
+    global) __ev_global "$2" "$3" ;;
+    *)      __ev_usage "$1" ;;
+esac
