@@ -44,9 +44,10 @@ __ev_install ()
     cp -r usr $install_path
     cp -r bin $install_path
     (
-        cd $repo_path
+        cd $install_path
         git clone https://github.com/erlang/otp.git
     )
+    echo "$install_path"/otp > "$install_path"/etc/.ev/global/repo
 }
 
 __ev_add_path ()
@@ -74,7 +75,7 @@ __ev_add_ps1 ()
     fi
     
     case $k in
-        Y) echo 'export PS1="$PS1 '"'"'$(__ev_ps1)'"'"' "' >> $HOME/.bashrc ;;
+        Y) echo 'export PS1="$PS1"'"'"'$(__ev_ps1 "" " ")'"'"' ' >> $HOME/.bashrc ;;
         n) ;;
         *) __ev_add_ps1
     esac
@@ -104,7 +105,8 @@ __ev_add_bashrc ()
     fi
 
     case $k in
-    Y) echo '### ev ###' >> $HOME/.bashrc
+    Y) echo "" >> $HOME/.bashrc
+       echo '### ev ###' >> $HOME/.bashrc
        echo 'source '$install_path'/usr/share/ev/completion/ev-prompt.sh' >> $HOME/.bashrc
        __ev_add_path
        __ev_add_ps1
