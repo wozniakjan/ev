@@ -91,7 +91,7 @@ __ev_ps1 ()
 {
     local active=`ev set 2> /dev/null`
     if [ "$active" != "" ]; then
-        echo "$1(ev $active)$2"
+        echo "${1}${active}${2}"
     fi
 }
 
