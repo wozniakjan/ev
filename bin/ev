@@ -2,6 +2,16 @@
 
 root="`dirname $0`/.."
 
+function __ev_error ()
+{
+    >2& echo "error: ev $1"
+    if [ -z "$2" ]; then
+        exit 1
+    else
+        exit "$2"
+    fi
+}
+
 function __ev_status ()
 {
     echo "status"
@@ -26,7 +36,8 @@ function __ev_init ()
 
 function __ev_list ()
 {
-    local repo=`__ev_global_repo`/evs
+    __ev_check_local
+    local repo=`__ev_repo_path`/evs
     echo "default"
     for f in ${repo}/*; do
         if [ -d "$f" ]; then
@@ -37,46 +48,152 @@ function __ev_list ()
 
 function __ev_set ()
 {
+    __ev_check_local
     local new="$1"
     if [ -z "$new" ]; then
-        cat .ev/active
+        local active=`cat .ev/active`
+        local repo=`ev repo path 2> /dev/null`
+        for f in $repo/evs/*; do
+            local p="`basename $f`"
+            if [ "$p" == "$active" ]; then
+                echo "$active"
+                return 0
+            fi
+        done
+        echo "default"
     else
         local list=`__ev_list`
         local arr_list=( "$list" )
         for l in $arr_list; do
             if [ "$l" == "$new" ]; then
-                echo "$new" > .ev/active
+                if echo "$new" > .ev/active; then
+                    echo "ev set as '$new'"
+                else
+                    __ev_error "unable to set $new"
+                fi
                 return 0
             fi
         done
-        echo "error: ev '$new' not found, try one of"
-        __ev_list
+        __ev_error "'$new' not found, try one of `__ev_list`"
     fi
 }
 
-function __ev_global_repo ()
+function __ev_repo_path ()
 {
     local new="$1"
     if [ -z "$new" ]; then
         cat `__ev_repo_file`
     else
-        echo "$new" > `__ev_repo_file`
+        if echo "$new" > `__ev_repo_file`; then
+            echo "global repository set to $new"
+        else
+            __ev_error "unable to set global repository"
+        fi
     fi
 }
 
-function __ev_global_build ()
+function __ev_repo_set ()
 {
-    echo "TODO"
+    local cmd="$1"
+    local ref="$2"
+    local repo=`__ev_repo_path`
+    if [ -z "$ref" ]; then
+        (
+            cd "$repo"
+            git "$cmd"
+        )
+    else
+        (
+            cd "$repo"
+            git checkout "$ref"
+        )
+    fi
 }
 
-function __ev_global ()
+function __ev_repo_build ()
+{
+    local new="$1"
+    local repo=`__ev_repo_path`
+    if [ -z "$new" ]; then
+        (
+            cd "$repo"
+            git symbolic-ref -q --short HEAD || git describe --tags --exact-match
+        )
+    elif [ "$new" == default ]; then
+        __ev_error "unable to name version 'default'"
+    else
+        (
+            cd "$repo"
+            if ! mkdir evs/"$new"; then
+                __ev_error "unable to create ${repo}evs/$new" 2
+            fi
+            if ! ./otp_build autoconf; then
+                __ev_error "autoconf failed"
+            fi
+            if ! ./configure; then
+                __ev_error "configure failed"
+            fi
+            if ! make clean; then
+                __ev_error "make clean failed"
+            fi
+            if ! make release; then
+                __ev_error "make release failed"
+            fi
+            if ! mv release/*/* "evs/$new"; then
+                __ev_error "unable to copy files in repo $repo from release to evs/$new"
+            fi
+        )
+        local ret="$?"
+        if [ "$ret" != 0 ]; then
+            if [ "$ret" != 2 ]; then
+                rm -rf "$repo/evs/$new"
+            fi
+            __ev_error "unable to build otp from repo"
+        fi
+    fi
+}
+
+function __ev_repo_rm ()
+{
+    local del="$1"
+    if [ -z "$del" ]; then
+        __ev_list
+    else
+        local list=`__ev_list`
+        local arr_list=( "$list" )
+        for l in $arr_list; do
+            if [ "$l" == "$del" ]; then
+                local repo=`__ev_repo_path`
+                if rm -rf "${repo}evs/$del"; then
+                    echo "ev '${repo}evs/$del' deleted"
+                else
+                    __ev_error "unable to delete $del"
+                fi
+                return 0
+            fi
+        done
+        __ev_error "'$del' not found, nothing deleted"
+    fi
+}
+
+function __ev_repo ()
 {
     local cmd="$1"
     case $cmd in
-         repo)  __ev_global_repo "$2" ;;
-         build) __ev_global_build "$2" ;;
-         *)     __ev_usage "global $cmd" ;;   
+         path)   __ev_repo_path "$2" ;;
+         tag)    __ev_repo_set tag "$2" ;;
+         branch) __ev_repo_set branch "$2" ;;
+         build)  __ev_repo_build "$2" ;;
+         rm)     __ev_repo_rm "$2" ;;
+         *)      __ev_usage "repo $cmd" ;;   
     esac
+}
+
+function __ev_check_local ()
+{
+    if [ ! -f ./.ev/active ]; then
+        __ev_error "not managed in `pwd`"
+    fi
 }
 
 function __ev_usage ()
@@ -89,14 +206,17 @@ function __ev_usage ()
     echo "usage: ev <command> [<args>]"
     echo 
     echo "local control - 'ev <command>'"
-    echo "    status     Print status report"
-    echo "    init       Mark current directory to be managed by ev"
-    echo "    list       Print local available versions"
-    echo "    set        Activate specific Erlang/OTP version"
+    echo "    status   Print status report"
+    echo "    init     Mark current directory to be managed by ev"
+    echo "    list     Print available versions"
+    echo "    set      Activate specific Erlang/OTP version"
     echo 
-    echo "global control - 'ev global <arg>'"
-    echo "    repo       Configure path to Erlang/OTP repository"
-    echo "    build      Build a tag and add to the repository"
+    echo "repo control - 'ev repo <arg>'"
+    echo "    tag      List tags or checkout a tag"
+    echo "    branch   List branches or checkout a branch"
+    echo "    build    Build current checked out ref as named"
+    echo "    rm       Remove built version"
+    echo "    path     Configure path to Erlang/OTP repository"
 }
 
 command="$1"
@@ -105,6 +225,6 @@ case $command in
     init)   __ev_init ;;
     list)   __ev_list ;;
     set)    __ev_set "$2" ;;
-    global) __ev_global "$2" "$3" ;;
+    repo)   __ev_repo "$2" "$3" ;;
     *)      __ev_usage "$1" ;;
 esac
