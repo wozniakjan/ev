@@ -36,7 +36,6 @@ function __ev_init ()
 
 function __ev_list ()
 {
-    __ev_check_local
     local repo=`__ev_repo_path`/evs
     echo "default"
     for f in ${repo}/*; do
@@ -140,7 +139,11 @@ function __ev_repo_build ()
                 __ev_error "make release failed"
             fi
             if ! mv release/*/* "evs/$new"; then
-                __ev_error "unable to copy files in repo $repo from release to evs/$new"
+                __ev_error "unable to copy files in repo '$repo' to 'evs/$new'"
+            fi
+            cd "evs/$new"
+            if ! ./Install `pwd`; then
+                __ev_error "unable to install erlang version in 'evs/$new'"
             fi
         )
         local ret="$?"
