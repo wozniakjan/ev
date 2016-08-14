@@ -4,7 +4,7 @@ root="`dirname $0`/.."
 
 function __ev_error ()
 {
-    >2& echo "error: ev $1"
+    >&2 echo "error: ev $1"
     if [ -z "$2" ]; then
         exit 1
     else
@@ -124,7 +124,7 @@ function __ev_repo_build ()
         (
             cd "$repo"
             if ! mkdir evs/"$new"; then
-                __ev_error "unable to create ${repo}evs/$new" 2
+                __ev_error "unable to create $repo/evs/$new" 2
             fi
             if ! ./otp_build autoconf; then
                 __ev_error "autoconf failed"
