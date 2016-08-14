@@ -123,7 +123,7 @@ function __ev_repo_build ()
     else
         (
             cd "$repo"
-            if ! mkdir evs/"$new"; then
+            if ! mkdir -p evs/"$new"; then
                 __ev_error "unable to create $repo/evs/$new" 2
             fi
             if ! ./otp_build autoconf; then
