@@ -75,7 +75,7 @@ __ev_add_ps1 ()
     fi
     
     case $k in
-        Y) echo 'export PS1="$PS1"'"'"'$(__ev_ps1 " (ev " ") ")'"'"' ' >> $HOME/.bashrc ;;
+        Y) echo 'export PS1="$PS1"'"'"'$(__ev_ps1 "(ev " ") ")'"'"' ' >> $HOME/.bashrc ;;
         n) ;;
         *) __ev_add_ps1
     esac
