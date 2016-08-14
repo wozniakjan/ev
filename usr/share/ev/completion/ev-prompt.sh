@@ -95,7 +95,7 @@ __ev_update_path()
 __ev_ps1 ()
 {
     local active=`ev set 2> /dev/null`
-    if [ "$active" != default ] && [ ! -z "$active" ]; then
+    if [ ! -z "$active" ]; then
         echo "${1}${active}${2}"
     fi
 }
