@@ -50,70 +50,56 @@ __ev_install ()
     echo "$install_path"/otp > "$install_path"/etc/.ev/global/repo
 }
 
-__ev_add_path ()
+__ev_yn ()
 {
-    printf "Append PATH in \'$HOME/.bashrc\'? Y/n [Y]: "
     local k
     read k
     if [ "$k" == "" ]; then
         k="Y"
     fi
-    
-    case $k in
-        Y) echo 'export PATH="'$install_path'/bin:$PATH"' >> $HOME/.bashrc ;;
-        n) ;;
+    echo "$k"
+}
+
+__ev_add_path ()
+{
+    printf "Append PATH in \'$HOME/.bashrc\'? Y/n [Y]: "
+    case `__ev_yn` in
+        y|Y) echo 'export PATH="'$install_path'/bin:$PATH"' >> $HOME/.bashrc ;;
+        n|N) ;;
         *) __ev_add_path
     esac
 }
 __ev_add_ps1 ()
 {
     printf "Append PS1 in \'$HOME/.bashrc\'? Y/n [Y]: "
-    local k
-    read k
-    if [ "$k" == "" ]; then
-        k="Y"
-    fi
-    
-    case $k in
-        Y) echo 'export PS1="$PS1"'"'"'$(__ev_ps1 "(ev " ") ")'"'"' ' >> $HOME/.bashrc ;;
-        n) ;;
+    case `__ev_yn` in
+        y|Y) echo 'export PS1="$PS1"'"'"'$(__ev_ps1 "(ev " ") ")'"'"' ' >> $HOME/.bashrc ;;
+        n|N) ;;
         *) __ev_add_ps1
     esac
 }
 __ev_add_prompt_command ()
 {
     printf "Append PROMPT_COMMAND in \'$HOME/.bashrc\'? Y/n [Y]: "
-    local k
-    read k
-    if [ "$k" == "" ]; then
-        k="Y"
-    fi
-
-    case $k in
-    Y) echo 'export PROMPT_COMMAND="__ev_prompt_command; $PROMPT_COMMAND"' >> $HOME/.bashrc ;;
-    n) ;;
-    *) __ev_add_prompt_command
+    case `__ev_yn` in
+        y|Y) echo 'export PROMPT_COMMAND="__ev_prompt_command; $PROMPT_COMMAND"' >> $HOME/.bashrc ;;
+        n|N) ;;
+        *) __ev_add_prompt_command
     esac
 }
 __ev_add_bashrc ()
 {
     printf "Source 'ev-prompt.sh' in '$HOME/.bashrc'? Y/n [Y]: "
-    local k
-    read k
-    if [ "$k" == "" ]; then
-        k="Y"
-    fi
-
-    case $k in
-    Y) echo "" >> $HOME/.bashrc
-       echo '### ev ###' >> $HOME/.bashrc
-       echo 'source '$install_path'/usr/share/ev/completion/ev-prompt.sh' >> $HOME/.bashrc
-       __ev_add_path
-       __ev_add_ps1
-       __ev_add_prompt_command 
-       echo '### ev ###' >> $HOME/.bashrc ;;
-    n) ;;
-    *) __ev_add_prompt_command
+    case `__ev_yn` in
+        y|Y) echo "" >> $HOME/.bashrc
+             echo '### ev ###' >> $HOME/.bashrc
+             echo 'source '$install_path'/usr/share/ev/completion/ev-prompt.sh' >> $HOME/.bashrc
+             __ev_add_path
+             __ev_add_ps1
+             __ev_add_prompt_command 
+             echo '### ev ###' >> $HOME/.bashrc ;;
+        n|N) ;;
+        *) __ev_add_bashrc
     esac
 }
 
