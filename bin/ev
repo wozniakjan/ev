@@ -12,9 +12,38 @@ function __ev_error ()
     fi
 }
 
+function __ev_status_local ()
+(
+    local active=`__ev_set`
+    local repo=`__ev_repo_path`/evs
+    echo "ev local root: "
+    echo "    `__ev_find_local`"
+    echo ""
+    echo "versions:"
+    for f in ${repo}/* default; do
+        local fd=`basename "$f"`
+        if [ "$active" == "$fd" ]; then
+            printf "  * "
+        else
+            printf "    "
+        fi
+        if [ -d "$f" ] || [ "$f" == default ]; then
+            echo "$fd"
+        fi
+    done
+    echo ""
+)
+
 function __ev_status ()
 {
-    echo "status"
+    if __ev_find_local >> /dev/null; then
+        __ev_status_local
+    else 
+        echo "not ev managed here"
+    fi
+    echo "ev repo path:"
+    echo "    `__ev_repo_path`"
+    echo ""
 }
 
 function __ev_repo_file ()
@@ -45,12 +74,31 @@ function __ev_list ()
     done
 }
 
+function __ev_find_local ()
+{
+    local path="$1"
+    if [ -z "$path" ]; then
+        path=`pwd`
+    fi
+
+    if [ -d "$path/.ev" ]; then
+        echo "$path"
+        return 0
+    fi
+    if [ "$path" == "/" ];  then
+        return 1
+    fi
+    local parent=`dirname "$path"`
+    __ev_find_local "$parent"
+}
+
 function __ev_set ()
 {
     __ev_check_local
+    local ev_local_path="`__ev_find_local`/.ev"
     local new="$1"
     if [ -z "$new" ]; then
-        local active=`cat .ev/active`
+        local active=`cat "$ev_local_path/active"`
         local repo=`ev repo path 2> /dev/null`
         for f in $repo/evs/*; do
             local p="`basename $f`"
@@ -65,7 +113,7 @@ function __ev_set ()
         local arr_list=( "$list" )
         for l in $arr_list; do
             if [ "$l" == "$new" ]; then
-                if echo "$new" > .ev/active; then
+                if echo "$new" > "$ev_local_path/active"; then
                     echo "ev set as '$new'"
                 else
                     __ev_error "unable to set $new"
@@ -194,7 +242,7 @@ function __ev_repo ()
 
 function __ev_check_local ()
 {
-    if [ ! -f ./.ev/active ]; then
+    if ! __ev_find_local >> /dev/null; then
         __ev_error "not managed in `pwd`"
     fi
 }
