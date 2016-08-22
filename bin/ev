@@ -31,7 +31,6 @@ function __ev_status_local ()
             echo "$fd"
         fi
     done
-    echo ""
 )
 
 function __ev_status ()
@@ -41,6 +40,7 @@ function __ev_status ()
     else 
         echo "not ev managed here"
     fi
+    echo ""
     echo "ev repo path:"
     echo "    `__ev_repo_path`"
     echo ""
