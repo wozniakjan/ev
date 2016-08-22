@@ -43,10 +43,6 @@ __ev_install ()
     cp -r etc $install_path
     cp -r usr $install_path
     cp -r bin $install_path
-    (
-        cd $install_path
-        git clone https://github.com/erlang/otp.git
-    )
     echo "$install_path"/otp > "$install_path"/etc/.ev/global/repo
 }
 
@@ -109,6 +105,10 @@ __ev_verify_requirements
 __ev_install
 __ev_add_bashrc
 
+(
+    cd $install_path
+    git clone https://github.com/erlang/otp.git
+)
 unset install_path
 
 echo "done"
