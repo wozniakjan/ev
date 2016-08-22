@@ -98,17 +98,27 @@ __ev_add_bashrc ()
         *) __ev_add_bashrc
     esac
 }
+__ev_clone_otp ()
+{
+    printf "Clone 'https://github.com/erlang/otp.git' to '$install_path'? Y/n [Y]: "
+    case `__ev_yn` in
+        y|Y) 
+            (
+                cd $install_path
+                git clone https://github.com/erlang/otp.git
+            ) ;;
+        n|N) ;;
+        *) __ev_clone_otp
+    esac
+}
 
 echo "Installing 'ev' - Erlang Versions"
 echo "============================================="
 __ev_verify_requirements
 __ev_install
 __ev_add_bashrc
+__ev_clone_otp
 
-(
-    cd $install_path
-    git clone https://github.com/erlang/otp.git
-)
 unset install_path
 
 echo "done"
