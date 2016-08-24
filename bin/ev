@@ -157,9 +157,20 @@ function __ev_repo_set ()
     fi
 }
 
-function __ev_repo_build ()
+function __ev_repo_deploy ()
 {
-    local new="$1"
+    shift
+    local new=""
+    local build=true
+    local configure=true
+    for arg in $@; do
+        case $arg in
+            --no-build)     build=false ;;
+            --no-configure) configure=false ;;
+            *)              new="$arg" ;;
+        esac
+    done
+
     local repo=`__ev_repo_path`
     if [ -z "$new" ]; then
         (
@@ -174,19 +185,25 @@ function __ev_repo_build ()
             if ! mkdir -p evs/"$new"; then
                 __ev_error "unable to create $repo/evs/$new" 2
             fi
-            if ! ./otp_build autoconf; then
-                __ev_error "autoconf failed"
+            if [ "$configure" == true ]; then
+                if ! ./otp_build autoconf; then
+                    __ev_error "autoconf failed"
+                fi
+                if ! ./configure; then
+                    __ev_error "configure failed"
+                fi
             fi
-            if ! ./configure; then
-                __ev_error "configure failed"
+
+            if [ "$build" == true ]; then 
+                if ! make clean; then
+                    __ev_error "make clean failed"
+                fi
+                if ! make release; then
+                    __ev_error "make release failed"
+                fi
             fi
-            if ! make clean; then
-                __ev_error "make clean failed"
-            fi
-            if ! make release; then
-                __ev_error "make release failed"
-            fi
-            if ! mv release/*/* "evs/$new"; then
+
+            if ! cp -r release/*/* "evs/$new"; then
                 __ev_error "unable to copy files in repo '$repo' to 'evs/$new'"
             fi
             cd "evs/$new"
@@ -199,7 +216,7 @@ function __ev_repo_build ()
             if [ "$ret" != 2 ]; then
                 rm -rf "$repo/evs/$new"
             fi
-            __ev_error "unable to build otp from repo"
+            __ev_error "unable to deploy otp from repo"
         fi
     fi
 }
@@ -229,12 +246,13 @@ function __ev_repo_rm ()
 
 function __ev_repo ()
 {
+    shift
     local cmd="$1"
     case $cmd in
          path)   __ev_repo_path "$2" ;;
          tag)    __ev_repo_set tag "$2" ;;
          branch) __ev_repo_set branch "$2" ;;
-         build)  __ev_repo_build "$2" ;;
+         deploy) __ev_repo_deploy $@ ;;
          rm)     __ev_repo_rm "$2" ;;
          *)      __ev_usage "repo $cmd" ;;   
     esac
@@ -265,7 +283,7 @@ function __ev_usage ()
     echo "repo control - 'ev repo <arg>'"
     echo "    tag      List tags or checkout a tag"
     echo "    branch   List branches or checkout a branch"
-    echo "    build    Build current checked out ref as named"
+    echo "    deploy   Build current checked out ref"
     echo "    rm       Remove built version"
     echo "    path     Configure path to Erlang/OTP repository"
 }
@@ -276,6 +294,6 @@ case $command in
     init)   __ev_init ;;
     list)   __ev_list ;;
     set)    __ev_set "$2" ;;
-    repo)   __ev_repo "$2" "$3" ;;
+    repo)   __ev_repo $@ ;;
     *)      __ev_usage "$1" ;;
 esac

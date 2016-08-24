@@ -29,13 +29,14 @@ _ev_repo_set ()
 _ev_repo ()
 {
     if [ "$COMP_CWORD" -eq 2 ]; then
-        _ev_compreply '' 'path build tag branch rm'
+        _ev_compreply '' 'path deploy tag branch rm'
         return 0
     fi
 
-    local cmd=${COMP_WORDS[COMP_CWORD-1]}
+    local cmd=${COMP_WORDS[2]}
     case "$cmd" in
-        path|build|tag|branch|rm) _ev_compreply "`ev repo $cmd`" ;;
+        path|tag|branch|rm) _ev_compreply "`ev repo $cmd`" ;;
+        deploy)             _ev_compreply "" "`ev repo deploy` --no-build --no-configure" ;;
     esac
 }
 
