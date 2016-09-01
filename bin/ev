@@ -2,6 +2,7 @@
 
 root="`dirname $0`/.."
 
+# helper method to print error and exit
 function __ev_error ()
 {
     >&2 echo "error: ev $1"
@@ -12,6 +13,7 @@ function __ev_error ()
     fi
 }
 
+# helper prints the local part of ev status
 function __ev_status_local ()
 (
     local active=`__ev_set`
@@ -33,6 +35,9 @@ function __ev_status_local ()
     done
 )
 
+# 'ev status'
+#
+# prints the ev status
 function __ev_status ()
 {
     if __ev_find_local >> /dev/null; then
@@ -46,11 +51,15 @@ function __ev_status ()
     echo ""
 }
 
+# gets the global repo file from global config
 function __ev_repo_file ()
 {
     echo $root/etc/.ev/global/repo
 }
 
+# 'ev init'
+#
+# inits or reinits the current folder for ev managing
 function __ev_init ()
 {
     if [ -d .ev ]; then
@@ -63,6 +72,9 @@ function __ev_init ()
     cp -r $root/etc/.ev/local .ev
 }
 
+# 'ev list'
+#
+# list available erlang versions
 function __ev_list ()
 {
     local repo=`__ev_repo_path`/evs
@@ -74,6 +86,7 @@ function __ev_list ()
     done
 }
 
+# recursively searches the for the local erlang config
 function __ev_find_local ()
 {
     local path="$1"
@@ -92,6 +105,9 @@ function __ev_find_local ()
     __ev_find_local "$parent"
 }
 
+# 'ev set [name]'
+# 
+# set local erlang version to 'name'
 function __ev_set ()
 {
     __ev_check_local
@@ -125,6 +141,9 @@ function __ev_set ()
     fi
 }
 
+# 'ev repo path [path]'
+# 
+# sets repository path
 function __ev_repo_path ()
 {
     local new="$1"
@@ -139,6 +158,9 @@ function __ev_repo_path ()
     fi
 }
 
+# 'ev repo set [version]'
+#
+# sets erlang version in current directory
 function __ev_repo_set ()
 {
     local cmd="$1"
@@ -157,6 +179,12 @@ function __ev_repo_set ()
     fi
 }
 
+# 'ev repo deploy [name] [--no-build] [--no-configure]'
+#
+# configures and builds currently checked out revision in erlang git repository
+# copies it to ev repo, installs and makes available for ev set as 'name'
+# if --no-configure passed it doesn't run the autoconfigure on erlang repository
+# if --no-build passed, also doesn't build the repo and assumes it has been build
 function __ev_repo_deploy ()
 {
     shift
@@ -221,6 +249,9 @@ function __ev_repo_deploy ()
     fi
 }
 
+# 'ev repo rm [name]'
+#
+# removes 'name' erlang version from the repo
 function __ev_repo_rm ()
 {
     local del="$1"
@@ -244,6 +275,7 @@ function __ev_repo_rm ()
     fi
 }
 
+# switch for ev repo commands
 function __ev_repo ()
 {
     shift
@@ -258,6 +290,7 @@ function __ev_repo ()
     esac
 }
 
+# checks if current repo is managed by ev and exits with error msg if not
 function __ev_check_local ()
 {
     if ! __ev_find_local >> /dev/null; then
@@ -288,6 +321,7 @@ function __ev_usage ()
     echo "    path     Configure path to Erlang/OTP repository"
 }
 
+# command switch
 command="$1"
 case $command in 
     status) __ev_status ;;
