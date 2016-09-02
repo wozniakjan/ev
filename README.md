@@ -17,7 +17,7 @@ Erlang each time you want to build something.
 The `ev` prepends the `PATH` variable any time a folder maintained by ev is entered
 and restores back when you leave the folder.
 
-<img src="https://raw.githubusercontent.com/wozniakjan/ev/master/img/example.gif" height="150" width="600">
+<img src="https://raw.githubusercontent.com/wozniakjan/ev/master/img/example.gif">
 
 
 ###How to get it
@@ -36,7 +36,7 @@ It will ask you where it should install itself and a few of other things, then
 it will clone the Erlang/OTP repository. If you are unsure what is the script asking 
 you, your best bet is to keep the default value.
 
-<img src="https://raw.githubusercontent.com/wozniakjan/ev/master/img/install.gif" height="150" width="600">
+<img src="https://raw.githubusercontent.com/wozniakjan/ev/master/img/install.gif">
 
 Once it's installed, you may want to tinker a bit with your `.bashrc`, then close 
 your current shell session and open a new one.
