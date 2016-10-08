@@ -1,7 +1,7 @@
 _ev_compreply ()
 {
     local terminal=("$1")
-    local nonterminal=("$1")
+    local nonterminal=("$2")
     local all=("$1" "$2")
     
     COMPREPLY=( `compgen -W "${all[*]}" -- $cur` )
@@ -14,7 +14,7 @@ _ev_compreply ()
                 contains=true
             fi
         done
-        if [ "$contains" != true ]; then
+        if [ "$contains" == true ]; then
             COMPREPLY[i]="$k "
         fi
     done
