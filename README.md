@@ -3,7 +3,7 @@
 Bash script that makes having multiple Erlang/OTP versions convenient. 
 Install, build, and use with autocomplete.
 
-###How does it work
+### How does it work
 The `ev` will clone the official Erlang/OTP git repository and build any revision
 you would desire on your machine. Once you build a revision, `ev` keeps them for
 later reuse.
@@ -20,7 +20,7 @@ and restores back when you leave the folder.
 <img src="https://raw.githubusercontent.com/wozniakjan/ev/master/img/example.gif">
 
 
-###How to get it
+### How to get it
 You will need a bash and common dependencies for building Erlang from the source.
 
 Clone the repository
@@ -42,7 +42,7 @@ Once it's installed, you may want to tinker a bit with your `.bashrc`, then clos
 your current shell session and open a new one.
 
 
-###How to use it
+### How to use it
 After you installed `ev`, you will want to build some Erlang version
     
     ev repo tag OTP-17.3.4      # checkout Erlang tag OTP-17.3.4
